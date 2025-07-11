@@ -109,13 +109,13 @@ io.on('connection', (socket) => {
         if (!rooms[player.room].gameState) {
             rooms[player.room].gameState = {};
         }
-        
+
         // Store input with timestamp
         rooms[player.room].gameState[player.id] = {
             input,
             timestamp: Date.now()
         };
-        
+
         // Broadcast updated state
         io.to(player.room).emit('gameState', rooms[player.room].gameState);
     }

@@ -751,6 +751,30 @@
             // Basic game objects
             const player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };
             const player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
+
+            // Add keyboard event listeners
+            const keys = {};
+            
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                sendPlayerInput();
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+                sendPlayerInput();
+            });
+            
+            function sendPlayerInput() {
+                const input = {
+                    up: keys['ArrowUp'] || keys['w'] || false,
+                    down: keys['ArrowDown'] || keys['s'] || false,
+                    left: keys['ArrowLeft'] || keys['a'] || false,
+                    right: keys['ArrowRight'] || keys['d'] || false,
+                    space: keys[' '] || false
+                };
+                socket.emit('playerInput', input);
+            }
             
             function gameLoop() {
                 if (!gameActive) return;
@@ -769,33 +793,13 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = '24px Orbitron';
                 ctx.textAlign = 'center';
-                ctx.fillText('COSMIC CLASH - ONLINE', canvas.width/2, 50);
+                ctx.fillText('ship v ship - ONLINE', canvas.width/2, 50);
                 
                 requestAnimationFrame(gameLoop);
             }
             
             gameActive = true;
             gameLoop();
-        }
-        
-        function updateGameState(gameState) {
-            // Update game objects based on server state
-            // ... (update players, projectiles, enemies, etc.)
-        }
-        
-        function gameLoop() {
-            if (!gameActive) return;
-            
-            // Update and draw game
-            // ... (game logic from previous implementation)
-            
-            // Send player input to server
-            const playerInput = {
-                // Collect keyboard state and actions
-            };
-            socket.emit('playerInput', playerInput);
-            
-            requestAnimationFrame(gameLoop);
         }
         
         function endGame(winner) {
