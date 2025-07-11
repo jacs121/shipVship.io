@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ship V ship: Online Space Battle</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap" rel="stylesheet">
@@ -84,6 +84,27 @@
         .disconnected {
             background: rgba(200, 0, 0, 0.3);
             border: 1px solid #f00;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100%;
+            height: 50vh; /* Use viewport height */
+            max-height: 400px;
+            min-height: 300px; /* Minimum height for small devices */
+            background: rgba(0, 10, 30, 0.8);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(0, 150, 255, 0.6);
+            border: 2px solid rgba(0, 200, 255, 0.4);
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         header {
@@ -235,25 +256,6 @@
         .freeze { background: linear-gradient(45deg, #00ffcc, #00a8ff); }
         .confuse { background: linear-gradient(45deg, #ffcc00, #ff9900); }
         .shield { background: linear-gradient(45deg, #00ff00, #00cc00); }
-
-        .game-container {
-            position: relative;
-            width: 100%;
-            height: 400px;
-            background: rgba(0, 10, 30, 0.8);
-            border-radius: 8px;
-            overflow: auto;
-            box-shadow: 0 0 30px rgba(0, 150, 255, 0.6);
-            border: 2px solid rgba(0, 200, 255, 0.4);
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
 
         .controls {
             display: flex;
@@ -928,7 +930,6 @@
             });
             
             function sendPlayerInput() {
-                console.log(keys)
                 const input = {
                     up: keys['ArrowUp'] || keys['w'] || touchInput.up || false,
                     down: keys['ArrowDown'] || keys['s'] || touchInput.down || false,
