@@ -9,7 +9,7 @@ app.use(cors());
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: ["https://yourusername.github.io"],
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
