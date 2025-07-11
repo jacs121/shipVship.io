@@ -793,24 +793,37 @@
         
         socket.on('gameState', (gameState) => {
             if (gameActive) {
-                // Store normalized game state
-                currentGameState = gameState;
+                const canvas = document.getElementById('gameCanvas');
+                if (!canvas) return;
                 
                 // Convert normalized positions to pixels
-                currentGameState.player1.x = gameState.player1.x * canvas.width;
-                currentGameState.player1.y = gameState.player1.y * canvas.height;
-                currentGameState.player2.x = gameState.player2.x * canvas.width;
-                currentGameState.player2.y = gameState.player2.y * canvas.height;
+                const pixelState = JSON.parse(JSON.stringify(gameState));
                 
-                // Scale sizes proportionally
-                const scale = Math.min(canvas.width / 800, canvas.height / 400);
-                currentGameState.player1.width = 50 * scale;
-                currentGameState.player1.height = 50 * scale;
-                currentGameState.player2.width = 50 * scale;
-                currentGameState.player2.height = 50 * scale;
+                // Player 1
+                pixelState.player1.x = gameState.player1.x * canvas.width;
+                pixelState.player1.y = gameState.player1.y * canvas.height;
+                pixelState.player1.width = gameState.player1.width * canvas.width;
+                pixelState.player1.height = gameState.player1.height * canvas.height;
+                
+                // Player 2
+                pixelState.player2.x = gameState.player2.x * canvas.width;
+                pixelState.player2.y = gameState.player2.y * canvas.height;
+                pixelState.player2.width = gameState.player2.width * canvas.width;
+                pixelState.player2.height = gameState.player2.height * canvas.height;
+                
+                // Projectiles
+                pixelState.projectiles = gameState.projectiles.map(projectile => ({
+                    ...projectile,
+                    x: projectile.x * canvas.width,
+                    y: projectile.y * canvas.height,
+                    width: projectile.width * canvas.width,
+                    height: projectile.height * canvas.height
+                }));
+                
+                currentGameState = pixelState;
             }
         });
-        
+
         socket.on('chatMessage', (message) => {
             const messageElement = document.createElement('div');
             messageElement.innerHTML = `<strong>${message.sender}:</strong> ${message.text}`;
@@ -974,46 +987,67 @@
         function drawGame() {
             if (!gameActive || !currentGameState) return;
             
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Calculate scaling factors
-            const baseWidth = 800; // Your base design width
-            const baseHeight = 400; // Your base design height
-            const scaleX = canvas.width / baseWidth;
-            const scaleY = canvas.height / baseHeight;
-            
-            // Draw player 1 with scaling
+            // Draw player 1 with shield
             const p1 = currentGameState.player1;
             ctx.fillStyle = p1.color;
-            ctx.fillRect(
-                p1.x * scaleX, 
-                p1.y * scaleY, 
-                p1.width * scaleX, 
-                p1.height * scaleY
-            );
+            ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
             
-            // Draw player 2 with scaling
+            if (p1.shieldActive) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    p1.x + p1.width/2, 
+                    p1.y + p1.height/2, 
+                    Math.max(p1.width, p1.height) * 0.8, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            }
+            
+            // Draw player 2 with shield
             const p2 = currentGameState.player2;
             ctx.fillStyle = p2.color;
-            ctx.fillRect(
-                p2.x * scaleX, 
-                p2.y * scaleY, 
-                p2.width * scaleX, 
-                p2.height * scaleY
-            );
+            ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
+            
+            if (p2.shieldActive) {
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    p2.x + p2.width/2, 
+                    p2.y + p2.height/2, 
+                    Math.max(p2.width, p2.height) * 0.8, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            }
+            
+            // Draw projectiles
+            currentGameState.projectiles.forEach(projectile => {
+                ctx.fillStyle = projectile.color;
+                ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+            });
             
             // Draw player names
             ctx.fillStyle = '#fff';
-            ctx.font = `${14 * Math.min(scaleX, scaleY)}px Orbitron`;
-            ctx.fillText(document.getElementById('player1Name').textContent, 
-                p1.x * scaleX, (p1.y - 15) * scaleY);
-            ctx.fillText(document.getElementById('player2Name').textContent, 
-                p2.x * scaleX, (p2.y - 15) * scaleY);
+            ctx.font = '14px Orbitron';
+            ctx.fillText(document.getElementById('player1Name').textContent, p1.x, p1.y - 10);
+            ctx.fillText(document.getElementById('player2Name').textContent, p2.x, p2.y - 10);
             
             // Draw game title
-            ctx.font = `${24 * Math.min(scaleX, scaleY)}px Orbitron`;
-            ctx.fillText('COSMIC CLASH - ONLINE', canvas.width/2, 50 * scaleY);
+            ctx.fillStyle = '#fff';
+            ctx.font = '24px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('SHIP-V-SHIP', canvas.width/2, 30);
         }
 
         // Initialize the game
@@ -1028,7 +1062,7 @@
                 canvas.height = container.clientHeight;
                 
                 // Redraw if game is active
-                if (gameActive) {
+                if (gameActive && currentGameState) {
                     drawGame();
                 }
             }
@@ -1040,9 +1074,6 @@
             window.addEventListener('resize', resizeCanvas);
             window.addEventListener('orientationchange', resizeCanvas);
             
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-            
             // Set player names correctly
             const player1Name = roomData.isPlayer1 ? roomData.player.name : roomData.opponent.name;
             const player2Name = roomData.isPlayer1 ? roomData.opponent.name : roomData.player.name;
@@ -1050,15 +1081,8 @@
             document.getElementById('player1Name').textContent = player1Name;
             document.getElementById('player2Name').textContent = player2Name;
 
-            // Add these variables at the top
-            let player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };
-            let player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
-            
-            let currentGameState = {
-                player1,
-                player2,
-                projectiles: []
-            };
+            // Initialize empty state (will be filled by server)
+            currentGameState = null;
 
             if (isMobileDevice()) {
                 mobileControls.style.display = 'grid';

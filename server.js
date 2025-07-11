@@ -103,7 +103,6 @@ io.on('connection', (socket) => {
   });
   
   // Game state updates
-  // Update the playerInput handler
   socket.on('playerInput', (input) => {
       const player = players[socket.id];
       if (!player || !player.room || !rooms[player.room]) return;
@@ -113,8 +112,20 @@ io.on('connection', (socket) => {
       // Initialize game state if needed
       if (!room.gameState) {
           room.gameState = {
-              player1: { x: 100, y: 200, width: 50, height: 50, color: '#00f' },
-              player2: { x: 600, y: 200, width: 50, height: 50, color: '#f0f' },
+              player1: { 
+                  x: 0.125,  // 100/800
+                  y: 0.5,    // 200/400
+                  width: 0.0625, // 50/800
+                  height: 0.125, // 50/400
+                  color: '#00f' 
+              },
+              player2: { 
+                  x: 0.75,   // 600/800
+                  y: 0.5,    // 200/400
+                  width: 0.0625, 
+                  height: 0.125, 
+                  color: '#f0f' 
+              },
               projectiles: []
           };
       }
@@ -122,11 +133,6 @@ io.on('connection', (socket) => {
       // Determine which player is which
       const isPlayer1 = room.players[0] === socket.id;
       const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
-      // Normalize positions
-      const positionScale = {
-          x: 1, // Relative to game width
-          y: 1  // Relative to game height
-      };
       
       // Update position based on input (using relative movements)
       const speed = 0.01; // Relative to canvas size
@@ -138,15 +144,16 @@ io.on('connection', (socket) => {
       // Keep positions within bounds (0-1)
       playerState.x = Math.max(0, Math.min(1, playerState.x));
       playerState.y = Math.max(0, Math.min(1, playerState.y));
+      
       // Handle actions
       if (input.action) {
           // Create projectile
           const projectile = {
-              x: playerState.x + playerState.width,
-              y: playerState.y + playerState.height / 2,
-              width: 10,
-              height: 5,
-              speed: isPlayer1 ? 8 : -8,
+              x: playerState.x,
+              y: playerState.y,
+              width: 0.0125, // 10/800
+              height: 0.0125, // 5/400
+              speed: isPlayer1 ? 0.01 : -0.01, // normalized speed
               color: isPlayer1 ? '#00f' : '#f0f'
           };
           room.gameState.projectiles.push(projectile);
@@ -158,29 +165,18 @@ io.on('connection', (socket) => {
           playerState.shieldTimer = 180; // 3 seconds at 60fps
       }
       
-      // Keep players in bounds
-      playerState.x = Math.max(0, Math.min(canvas.width - playerState.width, playerState.x));
-      playerState.y = Math.max(0, Math.min(canvas.height - playerState.height, playerState.y));
-      
       // Update projectiles
-      room.gameState.projectiles = room.gameState.projectiles.filter(projectile => {
+      room.gameState.projectiles.forEach(projectile => {
           projectile.x += projectile.speed;
-          return projectile.x > 0 && projectile.x < canvas.width;
       });
+      
+      // Filter out projectiles that are out of bounds
+      room.gameState.projectiles = room.gameState.projectiles.filter(
+          projectile => projectile.x > 0 && projectile.x < 1
+      );
       
       // Broadcast updated state
       io.to(room.id).emit('gameState', room.gameState);
-  });
-  
-  // Chat messages
-  socket.on('chatMessage', (message) => {
-    const player = players[socket.id];
-    if (player) {
-      io.emit('chatMessage', {
-        sender: player.name,
-        text: message
-      });
-    }
   });
 
   // Add a new event handler for restarting
