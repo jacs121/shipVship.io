@@ -122,14 +122,22 @@ io.on('connection', (socket) => {
       // Determine which player is which
       const isPlayer1 = room.players[0] === socket.id;
       const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
+      // Normalize positions
+      const positionScale = {
+          x: 1, // Relative to game width
+          y: 1  // Relative to game height
+      };
       
-      // Update position based on input
-      const speed = 5;
+      // Update position based on input (using relative movements)
+      const speed = 0.01; // Relative to canvas size
       if (input.left) playerState.x -= speed;
       if (input.right) playerState.x += speed;
       if (input.up) playerState.y -= speed;
       if (input.down) playerState.y += speed;
       
+      // Keep positions within bounds (0-1)
+      playerState.x = Math.max(0, Math.min(1, playerState.x));
+      playerState.y = Math.max(0, Math.min(1, playerState.y));
       // Handle actions
       if (input.action) {
           // Create projectile

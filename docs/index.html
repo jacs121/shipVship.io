@@ -504,6 +504,62 @@
                 font-size: 1rem;
             }
         }
+        /* Mobile landscape */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .game-container {
+                height: 70vh;
+                min-height: unset;
+            }
+            
+            .player-stats {
+                flex-direction: row;
+                gap: 5px;
+            }
+            
+            .player {
+                padding: 8px 12px;
+            }
+            
+            .chat-container {
+                display: none;
+            }
+        }
+
+        /* Small mobile devices */
+        @media (max-height: 400px) {
+            header {
+                padding: 8px;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .lobby h2 {
+                font-size: 1.2rem;
+            }
+            
+            .player-card {
+                padding: 8px;
+                width: 120px;
+            }
+        }
+
+        /* Support for iPhone notch areas */
+        @supports (padding: max(0px)) {
+            body {
+                padding: 
+                    max(10px, env(safe-area-inset-top))
+                    max(10px, env(safe-area-inset-right))
+                    max(10px, env(safe-area-inset-bottom))
+                    max(10px, env(safe-area-inset-left));
+            }
+            
+            .game-container {
+                margin-left: env(safe-area-inset-left);
+                margin-right: env(safe-area-inset-right);
+            }
+        }
     </style>
 </head>
 <body>
@@ -737,7 +793,21 @@
         
         socket.on('gameState', (gameState) => {
             if (gameActive) {
-                updateGameState(gameState);
+                // Store normalized game state
+                currentGameState = gameState;
+                
+                // Convert normalized positions to pixels
+                currentGameState.player1.x = gameState.player1.x * canvas.width;
+                currentGameState.player1.y = gameState.player1.y * canvas.height;
+                currentGameState.player2.x = gameState.player2.x * canvas.width;
+                currentGameState.player2.y = gameState.player2.y * canvas.height;
+                
+                // Scale sizes proportionally
+                const scale = Math.min(canvas.width / 800, canvas.height / 400);
+                currentGameState.player1.width = 50 * scale;
+                currentGameState.player1.height = 50 * scale;
+                currentGameState.player2.width = 50 * scale;
+                currentGameState.player2.height = 50 * scale;
             }
         });
         
@@ -873,6 +943,27 @@
             shieldBtn.addEventListener('mouseup', handleTouchEnd(shieldBtn, 'shield'));
         }
 
+        function resizeCanvas() {
+        const container = canvas.parentElement;
+        const dpr = window.devicePixelRatio || 1;
+        
+        // Set display size
+        canvas.style.width = `${container.clientWidth}px`;
+        canvas.style.height = `${container.clientHeight}px`;
+        
+        // Set actual size in memory
+        canvas.width = container.clientWidth * dpr;
+        canvas.height = container.clientHeight * dpr;
+        
+        // Scale context
+        ctx.scale(dpr, dpr);
+        
+        // Set context properties
+        ctx.font = '14px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+    }
+
 
         function isMobileDevice() {
             return (typeof window.orientation !== "undefined") || 
@@ -880,10 +971,75 @@
                 (window.matchMedia("(pointer: coarse)").matches);
         }
 
+        function drawGame() {
+            if (!gameActive || !currentGameState) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Calculate scaling factors
+            const baseWidth = 800; // Your base design width
+            const baseHeight = 400; // Your base design height
+            const scaleX = canvas.width / baseWidth;
+            const scaleY = canvas.height / baseHeight;
+            
+            // Draw player 1 with scaling
+            const p1 = currentGameState.player1;
+            ctx.fillStyle = p1.color;
+            ctx.fillRect(
+                p1.x * scaleX, 
+                p1.y * scaleY, 
+                p1.width * scaleX, 
+                p1.height * scaleY
+            );
+            
+            // Draw player 2 with scaling
+            const p2 = currentGameState.player2;
+            ctx.fillStyle = p2.color;
+            ctx.fillRect(
+                p2.x * scaleX, 
+                p2.y * scaleY, 
+                p2.width * scaleX, 
+                p2.height * scaleY
+            );
+            
+            // Draw player names
+            ctx.fillStyle = '#fff';
+            ctx.font = `${14 * Math.min(scaleX, scaleY)}px Orbitron`;
+            ctx.fillText(document.getElementById('player1Name').textContent, 
+                p1.x * scaleX, (p1.y - 15) * scaleY);
+            ctx.fillText(document.getElementById('player2Name').textContent, 
+                p2.x * scaleX, (p2.y - 15) * scaleY);
+            
+            // Draw game title
+            ctx.font = `${24 * Math.min(scaleX, scaleY)}px Orbitron`;
+            ctx.fillText('COSMIC CLASH - ONLINE', canvas.width/2, 50 * scaleY);
+        }
+
         // Initialize the game
         function initGame(roomData) {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
+            
+            // Properly size canvas for mobile
+            function resizeCanvas() {
+                const container = canvas.parentElement;
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                
+                // Redraw if game is active
+                if (gameActive) {
+                    drawGame();
+                }
+            }
+            
+            // Initial resize
+            resizeCanvas();
+            
+            // Handle orientation changes
+            window.addEventListener('resize', resizeCanvas);
+            window.addEventListener('orientationchange', resizeCanvas);
+            
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             
