@@ -21,7 +21,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow: hidden;
+            overflow: auto;
             position: relative;
             padding: 10px;
         }
@@ -179,7 +179,7 @@
             height: 20px;
             background: rgba(100, 100, 100, 0.3);
             border-radius: 10px;
-            overflow: hidden;
+            overflow: auto;
             margin: 8px 0;
         }
 
@@ -230,7 +230,7 @@
             height: 400px;
             background: rgba(0, 10, 30, 0.8);
             border-radius: 8px;
-            overflow: hidden;
+            overflow: auto;
             box-shadow: 0 0 30px rgba(0, 150, 255, 0.6);
             border: 2px solid rgba(0, 200, 255, 0.4);
         }
@@ -566,6 +566,12 @@
     </div>
 
     <script>
+        if (window.socketInitialized) {
+            location.reload();
+        } else {
+            window.socketInitialized = true;
+        }
+
         // Create stars for background
         function createStars() {
             const starsContainer = document.getElementById('stars');
@@ -697,6 +703,15 @@
         document.getElementById('restartBtn').addEventListener('click', () => {
             socket.emit('restartGame');
         });
+
+        socket.on('connect_error', (error) => {
+            console.error('Connection error:', error);
+            connectionStatus.innerHTML = '<i class="fas fa-plug"></i> Connection failed';
+        });
+
+        socket.on('reconnect_attempt', () => {
+            connectionStatus.innerHTML = '<i class="fas fa-plug"></i> Reconnecting...';
+        });
         
         sendMessageBtn.addEventListener('click', sendChatMessage);
         chatInput.addEventListener('keypress', (e) => {
@@ -726,10 +741,12 @@
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             
-            // Set player names
-            console.log(roomData)
-            document.getElementById('player1Name').textContent = roomData.player.name;
-            document.getElementById('player2Name').textContent = roomData.opponent.name;
+            // Set player names correctly
+            const player1Name = roomData.isPlayer1 ? roomData.player.name : roomData.opponent.name;
+            const player2Name = roomData.isPlayer1 ? roomData.opponent.name : roomData.player.name;
+            
+            document.getElementById('player1Name').textContent = player1Name;
+            document.getElementById('player2Name').textContent = player2Name;
 
             // Basic game objects
             const player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };

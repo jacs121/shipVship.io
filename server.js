@@ -80,8 +80,19 @@ io.on('connection', (socket) => {
       players[waitingPlayer.id].room = roomId;
       
       // Start game for both players
-      io.to(socket.id).emit('gameStart', { roomId, opponent: players[waitingPlayer.id] });
-      io.to(waitingPlayer.id).emit('gameStart', { roomId, opponent: players[socket.id] });
+      io.to(socket.id).emit('gameStart', {
+          roomId,
+          opponent: players[waitingPlayer.id],
+          player: players[socket.id], // Add current player data
+          isPlayer1: true // Indicate who is player1
+      });
+
+      io.to(waitingPlayer.id).emit('gameStart', {
+          roomId,
+          opponent: players[socket.id],
+          player: players[waitingPlayer.id], // Add current player data
+          isPlayer1: false // Indicate who is player1
+      });
     } else {
       // Set player as ready
       players[socket.id].ready = true;
@@ -94,9 +105,19 @@ io.on('connection', (socket) => {
   socket.on('playerInput', (input) => {
     const player = players[socket.id];
     if (player && player.room) {
-      // Update game state based on input
-      // Then broadcast to both players
-      io.to(player.room).emit('gameState', rooms[player.room].gameState);
+        // Update game state based on input
+        if (!rooms[player.room].gameState) {
+            rooms[player.room].gameState = {};
+        }
+        
+        // Store input with timestamp
+        rooms[player.room].gameState[player.id] = {
+            input,
+            timestamp: Date.now()
+        };
+        
+        // Broadcast updated state
+        io.to(player.room).emit('gameState', rooms[player.room].gameState);
     }
   });
   
