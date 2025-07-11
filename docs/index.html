@@ -12,6 +12,8 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Orbitron', 'Arial', sans-serif;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -24,6 +26,16 @@
             overflow: auto;
             position: relative;
             padding: 10px;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+
+        }
+
+        .mobile-btn.active {
+            transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.4) !important;
         }
 
         .stars {
@@ -435,59 +447,59 @@
         }
 
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
+            .game-container {
+                height: 50vh !important;
+                max-height: 400px;
             }
             
             .player-stats {
                 flex-direction: column;
+                gap: 10px;
+            }
+            
+            .player {
+                padding: 10px 15px;
+            }
+            
+            .chat-container {
+                margin-top: 10px;
+            }
+            
+            .chat-messages {
+                height: 80px;
             }
             
             .mobile-controls {
                 display: grid;
+                margin-top: 10px;
             }
             
+            .game-over h2 {
+                font-size: 2rem;
+            }
+            
+            .winner {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
             .game-container {
-                height: 350px;
+                height: 40vh !important;
             }
             
-            .instructions-content {
-                grid-template-columns: 1fr;
+            h1 {
+                font-size: 1.8rem;
             }
             
             .player h2 {
                 font-size: 1.2rem;
             }
             
-            .health-bar {
-                height: 18px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .game-container {
-                height: 300px;
-            }
-            
-            .btn {
-                padding: 10px 20px;
+            .powerup {
+                width: 30px;
+                height: 30px;
                 font-size: 1rem;
-            }
-            
-            .instructions h2 {
-                font-size: 1.4rem;
-            }
-            
-            .instructions-section h3 {
-                font-size: 1rem;
-            }
-            
-            .instructions-section ul {
-                font-size: 0.85rem;
             }
         }
     </style>
@@ -547,6 +559,21 @@
                 <h2>GAME OVER</h2>
                 <div class="winner">Winner: <span id="winner">Player 1</span></div>
                 <button class="btn" id="restartBtn">PLAY AGAIN</button>
+            </div>
+        </div>
+        
+        <div class="mobile-controls" id="mobileControls" style="display: none;">
+            <div class="d-pad">
+                <button class="mobile-btn up" id="upBtn"><i class="fas fa-arrow-up"></i></button>
+                <div class="d-pad-row">
+                    <button class="mobile-btn left" id="leftBtn"><i class="fas fa-arrow-left"></i></button>
+                    <button class="mobile-btn right" id="rightBtn"><i class="fas fa-arrow-right"></i></button>
+                </div>
+                <button class="mobile-btn down" id="downBtn"><i class="fas fa-arrow-down"></i></button>
+            </div>
+            <div class="action-buttons">
+                <button class="mobile-btn action" id="actionBtn"><i class="fas fa-fire"></i></button>
+                <button class="mobile-btn shield" id="shieldBtn"><i class="fas fa-shield-alt"></i></button>
             </div>
         </div>
         
@@ -757,6 +784,18 @@
         }
         
         function resetToLobby() {
+            mobileControls.style.display = 'none';
+            
+            // Reset touch input
+            touchInput = {
+                up: false,
+                down: false,
+                left: false,
+                right: false,
+                action: false,
+                shield: false
+            };
+            
             gameContainer.style.display = 'none';
             gameStats.style.display = 'none';
             gameControls.style.display = 'none';
@@ -764,6 +803,71 @@
             gameActive = false;
         }
         
+        function setupMobileControls() {
+            // Button elements
+            const upBtn = document.getElementById('upBtn');
+            const downBtn = document.getElementById('downBtn');
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            const actionBtn = document.getElementById('actionBtn');
+            const shieldBtn = document.getElementById('shieldBtn');
+            
+            // Touch start handlers
+            function handleTouchStart(button, inputKey) {
+                return (e) => {
+                    e.preventDefault();
+                    touchInput[inputKey] = true;
+                    button.classList.add('active');
+                    sendPlayerInput();
+                };
+            }
+            
+            // Touch end handlers
+            function handleTouchEnd(button, inputKey) {
+                return (e) => {
+                    e.preventDefault();
+                    touchInput[inputKey] = false;
+                    button.classList.remove('active');
+                    sendPlayerInput();
+                };
+            }
+            
+            // Add event listeners
+            upBtn.addEventListener('touchstart', handleTouchStart(upBtn, 'up'));
+            upBtn.addEventListener('touchend', handleTouchEnd(upBtn, 'up'));
+            downBtn.addEventListener('touchstart', handleTouchStart(downBtn, 'down'));
+            downBtn.addEventListener('touchend', handleTouchEnd(downBtn, 'down'));
+            leftBtn.addEventListener('touchstart', handleTouchStart(leftBtn, 'left'));
+            leftBtn.addEventListener('touchend', handleTouchEnd(leftBtn, 'left'));
+            rightBtn.addEventListener('touchstart', handleTouchStart(rightBtn, 'right'));
+            rightBtn.addEventListener('touchend', handleTouchEnd(rightBtn, 'right'));
+            actionBtn.addEventListener('touchstart', handleTouchStart(actionBtn, 'action'));
+            actionBtn.addEventListener('touchend', handleTouchEnd(actionBtn, 'action'));
+            shieldBtn.addEventListener('touchstart', handleTouchStart(shieldBtn, 'shield'));
+            shieldBtn.addEventListener('touchend', handleTouchEnd(shieldBtn, 'shield'));
+            
+            // Add mouse events for desktop testing
+            upBtn.addEventListener('mousedown', handleTouchStart(upBtn, 'up'));
+            upBtn.addEventListener('mouseup', handleTouchEnd(upBtn, 'up'));
+            downBtn.addEventListener('mousedown', handleTouchStart(downBtn, 'down'));
+            downBtn.addEventListener('mouseup', handleTouchEnd(downBtn, 'down'));
+            leftBtn.addEventListener('mousedown', handleTouchStart(leftBtn, 'left'));
+            leftBtn.addEventListener('mouseup', handleTouchEnd(leftBtn, 'left'));
+            rightBtn.addEventListener('mousedown', handleTouchStart(rightBtn, 'right'));
+            rightBtn.addEventListener('mouseup', handleTouchEnd(rightBtn, 'right'));
+            actionBtn.addEventListener('mousedown', handleTouchStart(actionBtn, 'action'));
+            actionBtn.addEventListener('mouseup', handleTouchEnd(actionBtn, 'action'));
+            shieldBtn.addEventListener('mousedown', handleTouchStart(shieldBtn, 'shield'));
+            shieldBtn.addEventListener('mouseup', handleTouchEnd(shieldBtn, 'shield'));
+        }
+
+
+        function isMobileDevice() {
+            return (typeof window.orientation !== "undefined") || 
+                (navigator.userAgent.indexOf('IEMobile') !== -1) ||
+                (window.matchMedia("(pointer: coarse)").matches);
+        }
+
         // Initialize the game
         function initGame(roomData) {
             const canvas = document.getElementById('gameCanvas');
@@ -783,10 +887,15 @@
             let player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
             
             let currentGameState = {
-                    player1,
-                    player2,
-                    projectiles: []
-                };
+                player1,
+                player2,
+                projectiles: []
+            };
+
+            if (isMobileDevice()) {
+                mobileControls.style.display = 'grid';
+                setupMobileControls();
+            }
 
             // Update the gameState handler
             socket.on('gameState', (gameState) => {
@@ -811,11 +920,12 @@
             function sendPlayerInput() {
                 console.log(keys)
                 const input = {
-                    up: keys['ArrowUp'] || keys['w'] || false,
-                    down: keys['ArrowDown'] || keys['s'] || false,
-                    left: keys['ArrowLeft'] || keys['a'] || false,
-                    right: keys['ArrowRight'] || keys['d'] || false,
-                    space: keys[' '] || false
+                    up: keys['ArrowUp'] || keys['w'] || touchInput.up || false,
+                    down: keys['ArrowDown'] || keys['s'] || touchInput.down || false,
+                    left: keys['ArrowLeft'] || keys['a'] || touchInput.left || false,
+                    right: keys['ArrowRight'] || keys['d'] || touchInput.right || false,
+                    action: keys[' '] || keys['z'] || touchInput.action || false,
+                    shield: keys['Shift'] || keys['x'] || touchInput.shield || false
                 };
                 socket.emit('playerInput', input);
             }
@@ -831,15 +941,49 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
                 if (currentGameState) {
-                    // Draw player 1
+                    // Draw player 1 with shield
                     const p1 = currentGameState.player1;
                     ctx.fillStyle = p1.color;
                     ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
                     
-                    // Draw player 2
+                    if (p1.shieldActive) {
+                        ctx.strokeStyle = '#00ffff';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(
+                            p1.x + p1.width/2, 
+                            p1.y + p1.height/2, 
+                            Math.max(p1.width, p1.height) * 0.8, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.stroke();
+                    }
+                    
+                    // Draw player 2 with shield
                     const p2 = currentGameState.player2;
                     ctx.fillStyle = p2.color;
                     ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
+                    
+                    if (p2.shieldActive) {
+                        ctx.strokeStyle = '#ff00ff';
+                        ctx.lineWidth = 3;
+                        ctx.beginPath();
+                        ctx.arc(
+                            p2.x + p2.width/2, 
+                            p2.y + p2.height/2, 
+                            Math.max(p2.width, p2.height) * 0.8, 
+                            0, 
+                            Math.PI * 2
+                        );
+                        ctx.stroke();
+                    }
+                    
+                    // Draw projectiles
+                    currentGameState.projectiles.forEach(projectile => {
+                        ctx.fillStyle = projectile.color;
+                        ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+                    });
                     
                     // Draw player names
                     ctx.fillStyle = '#fff';

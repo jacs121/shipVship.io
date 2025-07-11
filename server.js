@@ -103,24 +103,65 @@ io.on('connection', (socket) => {
   });
   
   // Game state updates
+  // Update the playerInput handler
   socket.on('playerInput', (input) => {
-    const player = players[socket.id];
-    if (!player) return; // Add safety check
-    if (player && player.room) {
-        // Update game state based on input
-        if (!rooms[player.room].gameState) {
-            rooms[player.room].gameState = {};
-        }
-
-        // Store input with timestamp
-        rooms[player.room].gameState[player.id] = {
-            input,
-            timestamp: Date.now()
-        };
-
-        // Broadcast updated state
-        io.to(player.room).emit('gameState', rooms[player.room].gameState);
-    }
+      const player = players[socket.id];
+      if (!player || !player.room || !rooms[player.room]) return;
+      
+      const room = rooms[player.room];
+      
+      // Initialize game state if needed
+      if (!room.gameState) {
+          room.gameState = {
+              player1: { x: 100, y: 200, width: 50, height: 50, color: '#00f' },
+              player2: { x: 600, y: 200, width: 50, height: 50, color: '#f0f' },
+              projectiles: []
+          };
+      }
+      
+      // Determine which player is which
+      const isPlayer1 = room.players[0] === socket.id;
+      const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
+      
+      // Update position based on input
+      const speed = 5;
+      if (input.left) playerState.x -= speed;
+      if (input.right) playerState.x += speed;
+      if (input.up) playerState.y -= speed;
+      if (input.down) playerState.y += speed;
+      
+      // Handle actions
+      if (input.action) {
+          // Create projectile
+          const projectile = {
+              x: playerState.x + playerState.width,
+              y: playerState.y + playerState.height / 2,
+              width: 10,
+              height: 5,
+              speed: isPlayer1 ? 8 : -8,
+              color: isPlayer1 ? '#00f' : '#f0f'
+          };
+          room.gameState.projectiles.push(projectile);
+      }
+      
+      if (input.shield) {
+          // Activate shield
+          playerState.shieldActive = true;
+          playerState.shieldTimer = 180; // 3 seconds at 60fps
+      }
+      
+      // Keep players in bounds
+      playerState.x = Math.max(0, Math.min(canvas.width - playerState.width, playerState.x));
+      playerState.y = Math.max(0, Math.min(canvas.height - playerState.height, playerState.y));
+      
+      // Update projectiles
+      room.gameState.projectiles = room.gameState.projectiles.filter(projectile => {
+          projectile.x += projectile.speed;
+          return projectile.x > 0 && projectile.x < canvas.width;
+      });
+      
+      // Broadcast updated state
+      io.to(room.id).emit('gameState', room.gameState);
   });
   
   // Chat messages
