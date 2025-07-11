@@ -790,39 +790,6 @@
             // Initialize game with roomData
             initGame(roomData);
         });
-        
-        socket.on('gameState', (gameState) => {
-            if (gameActive) {
-                const canvas = document.getElementById('gameCanvas');
-                if (!canvas) return;
-                
-                // Convert normalized positions to pixels
-                const pixelState = JSON.parse(JSON.stringify(gameState));
-                
-                // Player 1
-                pixelState.player1.x = gameState.player1.x * canvas.width;
-                pixelState.player1.y = gameState.player1.y * canvas.height;
-                pixelState.player1.width = gameState.player1.width * canvas.width;
-                pixelState.player1.height = gameState.player1.height * canvas.height;
-                
-                // Player 2
-                pixelState.player2.x = gameState.player2.x * canvas.width;
-                pixelState.player2.y = gameState.player2.y * canvas.height;
-                pixelState.player2.width = gameState.player2.width * canvas.width;
-                pixelState.player2.height = gameState.player2.height * canvas.height;
-                
-                // Projectiles
-                pixelState.projectiles = gameState.projectiles.map(projectile => ({
-                    ...projectile,
-                    x: projectile.x * canvas.width,
-                    y: projectile.y * canvas.height,
-                    width: projectile.width * canvas.width,
-                    height: projectile.height * canvas.height
-                }));
-                
-                currentGameState = pixelState;
-            }
-        });
 
         socket.on('chatMessage', (message) => {
             const messageElement = document.createElement('div');
@@ -993,7 +960,10 @@
             if (!gameActive || !currentGameState) return;
             
             const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return;
+            
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1055,8 +1025,45 @@
             ctx.fillText('SHIP-V-SHIP', canvas.width/2, 30);
         }
 
-        // Initialize the game
-        // Initialize the game
+        function convertNormalizedStateToPixels(gameState) {
+            if (!gameState) return null;
+            
+            const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return null;
+            
+            const pixelState = JSON.parse(JSON.stringify(gameState));
+            
+            // Player 1
+            pixelState.player1.x = gameState.player1.x * canvas.width;
+            pixelState.player1.y = gameState.player1.y * canvas.height;
+            pixelState.player1.width = gameState.player1.width * canvas.width;
+            pixelState.player1.height = gameState.player1.height * canvas.height;
+            
+            // Player 2
+            pixelState.player2.x = gameState.player2.x * canvas.width;
+            pixelState.player2.y = gameState.player2.y * canvas.height;
+            pixelState.player2.width = gameState.player2.width * canvas.width;
+            pixelState.player2.height = gameState.player2.height * canvas.height;
+            
+            // Projectiles
+            pixelState.projectiles = gameState.projectiles.map(projectile => ({
+                ...projectile,
+                x: projectile.x * canvas.width,
+                y: projectile.y * canvas.height,
+                width: projectile.width * canvas.width,
+                height: projectile.height * canvas.height
+            }));
+            
+            return pixelState;
+        }
+
+        socket.on('gameState', (gameState) => {
+            if (gameActive) {
+                currentGameState = convertNormalizedStateToPixels(gameState);
+            }
+        });
+
+        //  initGame function
         function initGame(roomData) {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -1139,7 +1146,6 @@
             gameActive = true;
             gameLoop();
         }
-        
         // Game loop function
         function gameLoop() {
             if (!gameActive) return;
@@ -1214,7 +1220,7 @@
             ctx.textAlign = 'center';
             ctx.fillText('SHIP-V-SHIP', canvas.width/2, 30);
         }
-        
+
         function endGame(winner) {
             gameActive = false;
             document.getElementById('winner').textContent = winner;
