@@ -641,6 +641,16 @@
         let playerName = "Player" + Math.floor(Math.random() * 1000);
         let gameRoom = null;
         let gameActive = false;
+
+        const mobileControls = document.getElementById('mobileControls');
+        let touchInput = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            action: false,
+            shield: false
+        };
         
         // Game elements
         const gameContainer = document.getElementById('gameContainer');
@@ -795,7 +805,7 @@
                 action: false,
                 shield: false
             };
-            
+
             gameContainer.style.display = 'none';
             gameStats.style.display = 'none';
             gameControls.style.display = 'none';
