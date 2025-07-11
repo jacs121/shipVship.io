@@ -795,6 +795,30 @@
                 }
             });
 
+            // Add keyboard event listeners
+            const keys = {};
+            
+            window.addEventListener('keydown', (e) => {
+                keys[e.key] = true;
+                sendPlayerInput();
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.key] = false;
+                sendPlayerInput();
+            });
+            
+            function sendPlayerInput() {
+                const input = {
+                    up: keys['ArrowUp'] || keys['w'] || false,
+                    down: keys['ArrowDown'] || keys['s'] || false,
+                    left: keys['ArrowLeft'] || keys['a'] || false,
+                    right: keys['ArrowRight'] || keys['d'] || false,
+                    space: keys[' '] || false
+                };
+                socket.emit('playerInput', input);
+            }
+
             // Update the gameLoop function
             function gameLoop() {
                 if (!gameActive) return;
