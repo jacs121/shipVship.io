@@ -727,13 +727,8 @@
             canvas.height = canvas.offsetHeight;
             
             // Set player names
-            document.getElementById('player1Name').textContent = roomData.opponent.id === playerId 
-                ? roomData.opponent.name 
-                : players[playerId].name;
-            
-            document.getElementById('player2Name').textContent = roomData.opponent.id === playerId 
-                ? players[playerId].name 
-                : roomData.opponent.name;
+            document.getElementById('player1Name').textContent = roomData.player.name;
+            document.getElementById('player2Name').textContent = roomData.opponent.name;
 
             // Basic game objects
             const player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };

@@ -3,11 +3,9 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
-const path = require('path');
 
 const app = express();
 app.use(cors());
-app.use(express.static(path.join(__dirname, 'public')));
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
@@ -24,6 +22,19 @@ let roomCounter = 1;
 // Socket.IO connection
 io.on('connection', (socket) => {
   console.log(`New client connected: ${socket.id}`);
+
+  let reconnectAttempts = 0;
+
+  function reconnect() {
+    if (reconnectAttempts < 5) {
+      socket.connect();
+      reconnectAttempts++;
+    }
+  }
+
+  socket.on('connect_error', () => {
+    setTimeout(reconnect, 2000);
+  });
   
   // Add player to global list
   players[socket.id] = {
@@ -49,6 +60,12 @@ io.on('connection', (socket) => {
     const waitingPlayer = Object.values(players).find(p => 
       p.id !== socket.id && p.ready && !p.room
     );
+
+    io.to(socket.id).emit('gameStart', { 
+        roomId, 
+        opponent: players[waitingPlayer.id],
+        player: players[socket.id]  // Add this line
+    });
     
     if (waitingPlayer) {
       // Create a room
@@ -98,6 +115,9 @@ io.on('connection', (socket) => {
   // Disconnect
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
+    if (players[socket.id]) {
+      players[socket.id].ready = false;
+    }
     const player = players[socket.id];
     
     if (player && player.room) {
