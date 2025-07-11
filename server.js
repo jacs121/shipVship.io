@@ -65,7 +65,7 @@ io.on('connection', (socket) => {
       // Create a room
       const roomId = `room${roomCounter++}`;
         io.to(socket.id).emit('gameStart', { 
-          roomId, 
+          roomId,
           opponent: players[waitingPlayer.id],
           player: players[socket.id]  // Add this line
       });
