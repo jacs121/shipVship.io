@@ -779,24 +779,14 @@
             document.getElementById('player2Name').textContent = player2Name;
 
             // Add these variables at the top
-            let currentGameState = null;
             let player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };
             let player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
-
-            // Update the initGame function
-            function initGame(roomData) {
-                // ... existing code ...
-                
-                // Initialize game state
-                currentGameState = {
+            
+            let currentGameState = {
                     player1,
                     player2,
                     projectiles: []
                 };
-                
-                // Start game loop
-                gameLoop();
-            }
 
             // Update the gameState handler
             socket.on('gameState', (gameState) => {
