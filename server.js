@@ -60,16 +60,15 @@ io.on('connection', (socket) => {
     const waitingPlayer = Object.values(players).find(p => 
       p.id !== socket.id && p.ready && !p.room
     );
-
-    io.to(socket.id).emit('gameStart', { 
-        roomId, 
-        opponent: players[waitingPlayer.id],
-        player: players[socket.id]  // Add this line
-    });
     
     if (waitingPlayer) {
       // Create a room
       const roomId = `room${roomCounter++}`;
+        io.to(socket.id).emit('gameStart', { 
+          roomId, 
+          opponent: players[waitingPlayer.id],
+          player: players[socket.id]  // Add this line
+      });
       rooms[roomId] = {
         id: roomId,
         players: [socket.id, waitingPlayer.id],
