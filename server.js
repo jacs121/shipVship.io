@@ -56,6 +56,7 @@ io.on('connection', (socket) => {
   
   // Start game
   socket.on('startGame', () => {
+    if (!players[socket.id]) return; // Add safety check
     // Find an opponent
     const waitingPlayer = Object.values(players).find(p => 
       p.id !== socket.id && p.ready && !p.room
@@ -104,6 +105,7 @@ io.on('connection', (socket) => {
   // Game state updates
   socket.on('playerInput', (input) => {
     const player = players[socket.id];
+    if (!player) return; // Add safety check
     if (player && player.room) {
         // Update game state based on input
         if (!rooms[player.room].gameState) {
@@ -131,7 +133,22 @@ io.on('connection', (socket) => {
       });
     }
   });
-  
+
+  // Add a new event handler for restarting
+  socket.on('restartGame', () => {
+      const player = players[socket.id];
+      if (!player) return;
+      
+      if (player.room) {
+          // Clean up previous room
+          delete rooms[player.room];
+          player.room = null;
+      }
+      
+      player.ready = false;
+      io.emit('playerList', Object.values(players));
+  });
+    
   // Disconnect
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
@@ -141,18 +158,16 @@ io.on('connection', (socket) => {
     const player = players[socket.id];
     
     if (player && player.room) {
-      // Notify opponent
-      const room = rooms[player.room];
-      const opponentId = room.players.find(id => id !== socket.id);
-      
-      if (opponentId) {
-        io.to(opponentId).emit('playerLeft', socket.id);
-      }
-      
-      // Clean up room
-      delete rooms[player.room];
+        // Clean up room
+        if (rooms[player.room]) {
+            delete rooms[player.room];
+        }
+        
+        // Reset player status
+        player.room = null;
+        player.ready = false;
     }
-    
+
     // Remove player
     delete players[socket.id];
     io.emit('playerList', Object.values(players));

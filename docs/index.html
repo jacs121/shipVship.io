@@ -641,6 +641,36 @@
         socket.on('playerId', (id) => {
             playerId = id;
         });
+
+        // Update the restart button handler
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Reset game state
+            gameActive = false;
+            currentGameState = null;
+            
+            // Notify server
+            socket.emit('restartGame');
+            
+            // Return to lobby
+            resetToLobby();
+        });
+
+        // Update the leave button handler
+        document.getElementById('leaveBtn').addEventListener('click', () => {
+            // Hide game over screen
+            document.getElementById('gameOver').style.display = 'none';
+            
+            // Notify server
+            socket.emit('leaveGame');
+            
+            // Reset and return to lobby
+            gameActive = false;
+            currentGameState = null;
+            resetToLobby();
+        });
         
         socket.on('playerList', (players) => {
             playerList.innerHTML = '';
@@ -748,52 +778,66 @@
             document.getElementById('player1Name').textContent = player1Name;
             document.getElementById('player2Name').textContent = player2Name;
 
-            // Basic game objects
-            const player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };
-            const player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
+            // Add these variables at the top
+            let currentGameState = null;
+            let player1 = { x: 100, y: 200, width: 50, height: 50, color: '#00f' };
+            let player2 = { x: 600, y: 200, width: 50, height: 50, color: '#f0f' };
 
-            // Add keyboard event listeners
-            const keys = {};
-            
-            window.addEventListener('keydown', (e) => {
-                keys[e.key] = true;
-                sendPlayerInput();
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                keys[e.key] = false;
-                sendPlayerInput();
-            });
-            
-            function sendPlayerInput() {
-                const input = {
-                    up: keys['ArrowUp'] || keys['w'] || false,
-                    down: keys['ArrowDown'] || keys['s'] || false,
-                    left: keys['ArrowLeft'] || keys['a'] || false,
-                    right: keys['ArrowRight'] || keys['d'] || false,
-                    space: keys[' '] || false
+            // Update the initGame function
+            function initGame(roomData) {
+                // ... existing code ...
+                
+                // Initialize game state
+                currentGameState = {
+                    player1,
+                    player2,
+                    projectiles: []
                 };
-                socket.emit('playerInput', input);
+                
+                // Start game loop
+                gameLoop();
             }
-            
+
+            // Update the gameState handler
+            socket.on('gameState', (gameState) => {
+                if (gameActive) {
+                    currentGameState = gameState;
+                }
+            });
+
+            // Update the gameLoop function
             function gameLoop() {
                 if (!gameActive) return;
+                
+                const canvas = document.getElementById('gameCanvas');
+                const ctx = canvas.getContext('2d');
                 
                 // Clear canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 
-                // Draw players
-                ctx.fillStyle = player1.color;
-                ctx.fillRect(player1.x, player1.y, player1.width, player1.height);
+                if (currentGameState) {
+                    // Draw player 1
+                    const p1 = currentGameState.player1;
+                    ctx.fillStyle = p1.color;
+                    ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
+                    
+                    // Draw player 2
+                    const p2 = currentGameState.player2;
+                    ctx.fillStyle = p2.color;
+                    ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
+                    
+                    // Draw player names
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '14px Orbitron';
+                    ctx.fillText(document.getElementById('player1Name').textContent, p1.x, p1.y - 10);
+                    ctx.fillText(document.getElementById('player2Name').textContent, p2.x, p2.y - 10);
+                }
                 
-                ctx.fillStyle = player2.color;
-                ctx.fillRect(player2.x, player2.y, player2.width, player2.height);
-                
-                // Add game title
+                // Draw game title
                 ctx.fillStyle = '#fff';
                 ctx.font = '24px Orbitron';
                 ctx.textAlign = 'center';
-                ctx.fillText('ship v ship - ONLINE', canvas.width/2, 50);
+                ctx.fillText('COSMIC CLASH - ONLINE', canvas.width/2, 50);
                 
                 requestAnimationFrame(gameLoop);
             }
