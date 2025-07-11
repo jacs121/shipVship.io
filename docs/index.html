@@ -956,26 +956,31 @@
             shieldBtn.addEventListener('mouseup', handleTouchEnd(shieldBtn, 'shield'));
         }
 
-        function resizeCanvas() {
-        const container = canvas.parentElement;
-        const dpr = window.devicePixelRatio || 1;
-        
-        // Set display size
-        canvas.style.width = `${container.clientWidth}px`;
-        canvas.style.height = `${container.clientHeight}px`;
-        
-        // Set actual size in memory
-        canvas.width = container.clientWidth * dpr;
-        canvas.height = container.clientHeight * dpr;
-        
-        // Scale context
-        ctx.scale(dpr, dpr);
-        
-        // Set context properties
-        ctx.font = '14px Orbitron';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-    }
+        function appResizeCanvas() {
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            
+            // Set display size
+            canvas.style.width = `${container.clientWidth}px`;
+            canvas.style.height = `${container.clientHeight}px`;
+            
+            // Set actual size in memory
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
+            
+            // Scale context
+            ctx.scale(dpr, dpr);
+            
+            // Set context properties
+            ctx.font = '14px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Redraw if game is active
+            if (gameActive && currentGameState) {
+                drawGame();
+            }
+        }
 
 
         function isMobileDevice() {
@@ -1051,6 +1056,7 @@
         }
 
         // Initialize the game
+        // Initialize the game
         function initGame(roomData) {
             const canvas = document.getElementById('gameCanvas');
             const ctx = canvas.getContext('2d');
@@ -1058,8 +1064,23 @@
             // Properly size canvas for mobile
             function resizeCanvas() {
                 const container = canvas.parentElement;
-                canvas.width = container.clientWidth;
-                canvas.height = container.clientHeight;
+                const dpr = window.devicePixelRatio || 1;
+                
+                // Set display size
+                canvas.style.width = `${container.clientWidth}px`;
+                canvas.style.height = `${container.clientHeight}px`;
+                
+                // Set actual size in memory
+                canvas.width = container.clientWidth * dpr;
+                canvas.height = container.clientHeight * dpr;
+                
+                // Scale context
+                ctx.scale(dpr, dpr);
+                
+                // Set context properties
+                ctx.font = '14px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 
                 // Redraw if game is active
                 if (gameActive && currentGameState) {
@@ -1089,13 +1110,6 @@
                 setupMobileControls();
             }
 
-            // Update the gameState handler
-            socket.on('gameState', (gameState) => {
-                if (gameActive) {
-                    currentGameState = gameState;
-                }
-            });
-
             // Add keyboard event listeners
             const keys = {};
             
@@ -1121,79 +1135,84 @@
                 socket.emit('playerInput', input);
             }
 
-            // Update the gameLoop function
-            function gameLoop() {
-                if (!gameActive) return;
-                
-                const canvas = document.getElementById('gameCanvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Clear canvas
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                if (currentGameState) {
-                    // Draw player 1 with shield
-                    const p1 = currentGameState.player1;
-                    ctx.fillStyle = p1.color;
-                    ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
-                    
-                    if (p1.shieldActive) {
-                        ctx.strokeStyle = '#00ffff';
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.arc(
-                            p1.x + p1.width/2, 
-                            p1.y + p1.height/2, 
-                            Math.max(p1.width, p1.height) * 0.8, 
-                            0, 
-                            Math.PI * 2
-                        );
-                        ctx.stroke();
-                    }
-                    
-                    // Draw player 2 with shield
-                    const p2 = currentGameState.player2;
-                    ctx.fillStyle = p2.color;
-                    ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
-                    
-                    if (p2.shieldActive) {
-                        ctx.strokeStyle = '#ff00ff';
-                        ctx.lineWidth = 3;
-                        ctx.beginPath();
-                        ctx.arc(
-                            p2.x + p2.width/2, 
-                            p2.y + p2.height/2, 
-                            Math.max(p2.width, p2.height) * 0.8, 
-                            0, 
-                            Math.PI * 2
-                        );
-                        ctx.stroke();
-                    }
-                    
-                    // Draw projectiles
-                    currentGameState.projectiles.forEach(projectile => {
-                        ctx.fillStyle = projectile.color;
-                        ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
-                    });
-                    
-                    // Draw player names
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '14px Orbitron';
-                    ctx.fillText(document.getElementById('player1Name').textContent, p1.x, p1.y - 10);
-                    ctx.fillText(document.getElementById('player2Name').textContent, p2.x, p2.y - 10);
-                }
-                
-                // Draw game title
-                ctx.fillStyle = '#fff';
-                ctx.font = '24px Orbitron';
-                ctx.textAlign = 'center';
-                ctx.fillText('COSMIC CLASH - ONLINE', canvas.width/2, 50);
-                
-                requestAnimationFrame(gameLoop);
-            }
-            
+            // Start game loop
             gameActive = true;
             gameLoop();
+        }
+        
+        // Game loop function
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Draw game function
+        function drawGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!canvas || !ctx || !currentGameState) return;
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw player 1 with shield
+            const p1 = currentGameState.player1;
+            ctx.fillStyle = p1.color;
+            ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
+            
+            if (p1.shieldActive) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    p1.x + p1.width/2, 
+                    p1.y + p1.height/2, 
+                    Math.max(p1.width, p1.height) * 0.8, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            }
+            
+            // Draw player 2 with shield
+            const p2 = currentGameState.player2;
+            ctx.fillStyle = p2.color;
+            ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
+            
+            if (p2.shieldActive) {
+                ctx.strokeStyle = '#ff00ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(
+                    p2.x + p2.width/2, 
+                    p2.y + p2.height/2, 
+                    Math.max(p2.width, p2.height) * 0.8, 
+                    0, 
+                    Math.PI * 2
+                );
+                ctx.stroke();
+            }
+            
+            // Draw projectiles
+            currentGameState.projectiles.forEach(projectile => {
+                ctx.fillStyle = projectile.color;
+                ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+            });
+            
+            // Draw player names
+            ctx.fillStyle = '#fff';
+            ctx.font = '14px Orbitron';
+            ctx.fillText(document.getElementById('player1Name').textContent, p1.x, p1.y - 10);
+            ctx.fillText(document.getElementById('player2Name').textContent, p2.x, p2.y - 10);
+            
+            // Draw game title
+            ctx.fillStyle = '#fff';
+            ctx.font = '24px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('SHIP-V-SHIP', canvas.width/2, 30);
         }
         
         function endGame(winner) {
