@@ -192,6 +192,7 @@ io.on('connection', (socket) => {
 
   // Game state updates
   socket.on('playerInput', (input) => {
+    console.log("player", player.name, "inputted", input)
     const player = players[socket.id];
     if (!player || !player.room || !rooms[player.room]) return;
     
