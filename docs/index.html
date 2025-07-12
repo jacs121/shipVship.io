@@ -718,7 +718,13 @@
         let playerName = "Player" + Math.floor(Math.random() * 1000);
         let gameRoom = null;
         let gameActive = false;
+
+        // game data
         let currentGameState = null
+        let localPlayerState = null;
+
+        // Add keyboard event listeners
+        const keys = {};
 
         const mobileControls = document.getElementById('mobileControls');
         let touchInput = {
@@ -1010,7 +1016,7 @@
             ctx.clearRect(0, 0, width, height);
             
             // Draw player 1
-            const p1 = currentGameState.player1;
+            const p1 = localPlayerState || currentGameState.player1;
             ctx.fillStyle = p1.color;
             ctx.fillRect(p1.x * width, p1.y * height, p1.width * width, p1.height * height);
             
@@ -1093,10 +1099,11 @@
             
             document.getElementById('player1Name').textContent = player1Name;
             document.getElementById('player2Name').textContent = player2Name;
-
+            
             // Initialize empty state
+            localPlayerState = roomData.isPlayer1 ? { ...roomData.player } : { ...roomData.opponent };
             gameActive = true;
-
+            
             // Initial resize
             resizeCanvas();
             
@@ -1111,9 +1118,6 @@
 
             setupMobileControls();
 
-            // Add keyboard event listeners
-            const keys = {};
-            
             window.addEventListener('keydown', (e) => {
                 keys[e.key] = true;
                 sendPlayerInput();
@@ -1147,6 +1151,18 @@
             if (!gameActive) return;
             
             // Draw only when we have state
+            if (localPlayerState) {
+                const speed = 0.0025;
+
+                if (keys['ArrowLeft'] || keys['a']) localPlayerState.x -= speed;
+                if (keys['ArrowRight'] || keys['d']) localPlayerState.x += speed;
+                if (keys['ArrowUp'] || keys['w']) localPlayerState.y -= speed;
+                if (keys['ArrowDown'] || keys['s']) localPlayerState.y += speed;
+
+                // clamp position
+                localPlayerState.x = Math.max(0.01, Math.min(0.99 - localPlayerState.width, localPlayerState.x));
+                localPlayerState.y = Math.max(0.01, Math.min(0.99 - localPlayerState.height, localPlayerState.y));
+            }
             if (currentGameState) {
                 drawGame();
             }

@@ -24,9 +24,9 @@ const io = socketIo(server, {
 // Game state
 const players = {};
 const rooms = {};
-let roomCounter = 1;
-
-
+let roomCounter = 1
+;
+const speed = 0.0025;
 const FPS = 60;
 const FRAME_TIME = 1000 / FPS;
 
@@ -152,8 +152,7 @@ io.on('connection', (socket) => {
           const input = room.inputs[playerId];
           const isPlayer1 = room.players[0] === playerId;
           const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
-          
-          const speed = 0.01;
+
           if (input.left) playerState.x = Math.max(0.01, playerState.x - speed);
           if (input.right) playerState.x = Math.min(0.99 - playerState.width, playerState.x + speed);
           if (input.up) playerState.y = Math.max(0.01, playerState.y - speed);
