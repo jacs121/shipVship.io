@@ -712,6 +712,7 @@
         let playerName = "Player" + Math.floor(Math.random() * 1000);
         let gameRoom = null;
         let gameActive = false;
+        let currentGameState = null
 
         const mobileControls = document.getElementById('mobileControls');
         let touchInput = {
@@ -972,7 +973,6 @@
             ctx.scale(dpr, dpr);
             
             // Redraw if game is active
-            console.log(currentGameState)
             if (gameActive && currentGameState) {
                 drawGame();
             }
