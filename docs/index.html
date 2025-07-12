@@ -1149,74 +1149,83 @@
         // Draw game function
         function drawGame() {
             const canvas = document.getElementById('gameCanvas');
+            if (!canvas) return;
+
             const ctx = canvas.getContext('2d');
-            
-            if (!canvas || !ctx || !currentGameState) return;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw player 1 with shield
+            if (!ctx || !currentGameState) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+
+            ctx.clearRect(0, 0, width, height);
+
             const p1 = currentGameState.player1;
             ctx.fillStyle = p1.color;
-            ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
+            ctx.fillRect(p1.x * width, p1.y * height, p1.width * width, p1.height * height);
 
-            document.getElementById('player1HealthText').textContent = currentGameState.player1.health;
-            document.getElementById('player1Health').style.width = currentGameState.player1.health + '%';
-
-            document.getElementById('player2HealthText').textContent = currentGameState.player2.health;
-            document.getElementById('player2Health').style.width = currentGameState.player2.health + '%';
-                        
+            // draw shield
             if (p1.shieldActive) {
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(
-                    p1.x + p1.width/2, 
-                    p1.y + p1.height/2, 
-                    Math.max(p1.width, p1.height) * 0.8, 
-                    0, 
+                    (p1.x + p1.width/2) * width,
+                    (p1.y + p1.height/2) * height,
+                    Math.max(p1.width * width, p1.height * height) * 0.8,
+                    0,
                     Math.PI * 2
                 );
                 ctx.stroke();
             }
-            
-            // Draw player 2 with shield
+
             const p2 = currentGameState.player2;
             ctx.fillStyle = p2.color;
-            ctx.fillRect(p2.x, p2.y, p2.width, p2.height);
-            
+            ctx.fillRect(p2.x * width, p2.y * height, p2.width * width, p2.height * height);
+
             if (p2.shieldActive) {
                 ctx.strokeStyle = '#ff00ff';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(
-                    p2.x + p2.width/2, 
-                    p2.y + p2.height/2, 
-                    Math.max(p2.width, p2.height) * 0.8, 
-                    0, 
+                    (p2.x + p2.width/2) * width,
+                    (p2.y + p2.height/2) * height,
+                    Math.max(p2.width * width, p2.height * height) * 0.8,
+                    0,
                     Math.PI * 2
                 );
                 ctx.stroke();
             }
-            
-            // Draw projectiles
+
+            // projectiles
             currentGameState.projectiles.forEach(projectile => {
                 ctx.fillStyle = projectile.color;
-                ctx.fillRect(projectile.x, projectile.y, projectile.width, projectile.height);
+                ctx.fillRect(
+                    projectile.x * width,
+                    projectile.y * height,
+                    projectile.width * width,
+                    projectile.height * height
+                );
             });
-            
-            // Draw player names
+
+            // player names
             ctx.fillStyle = '#fff';
             ctx.font = '14px Orbitron';
-            ctx.fillText(document.getElementById('player1Name').textContent, p1.x, p1.y - 10);
-            ctx.fillText(document.getElementById('player2Name').textContent, p2.x, p2.y - 10);
-            
-            // Draw game title
+            ctx.textAlign = 'left';
+            ctx.fillText(document.getElementById('player1Name').textContent, p1.x * width, p1.y * height - 10);
+            ctx.fillText(document.getElementById('player2Name').textContent, p2.x * width, p2.y * height - 10);
+
+            // game title
             ctx.fillStyle = '#fff';
             ctx.font = '24px Orbitron';
             ctx.textAlign = 'center';
-            ctx.fillText('SHIP-V-SHIP', canvas.width/2, 30);
+            ctx.fillText('SHIP-V-SHIP', width / 2, 30);
+
+            // update health bars
+            document.getElementById('player1HealthText').textContent = currentGameState.player1.health;
+            document.getElementById('player1Health').style.width = currentGameState.player1.health + '%';
+
+            document.getElementById('player2HealthText').textContent = currentGameState.player2.health;
+            document.getElementById('player2Health').style.width = currentGameState.player2.health + '%';
         }
 
         function endGame(winner) {
