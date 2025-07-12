@@ -859,7 +859,7 @@
             const message = chatInput.value.trim();
             if (message) {
                 socket.emit('chatMessage', {
-                message
+                message: message
                 });
                 chatInput.value = '';
             }
