@@ -1,4 +1,11 @@
 // server.js
+
+// info:
+// a one on one alien invader
+// 2 player go against waves of different types of aliens and the last player to survive wins
+// players can use abilities to help them selfs or sabotage the player player
+// there is also mobile support!!!
+
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -18,6 +25,10 @@ const io = socketIo(server, {
 const players = {};
 const rooms = {};
 let roomCounter = 1;
+
+
+const FPS = 60;
+const FRAME_TIME = 1000 / FPS;
 
 // Socket.IO connection
 io.on('connection', (socket) => {
@@ -116,62 +127,12 @@ io.on('connection', (socket) => {
 
   // Game state updates
   socket.on('playerInput', (input) => {
-      const player = players[socket.id];
-      if (!player || !player.room || !rooms[player.room]) return;
-      
-      const room = rooms[player.room];
-      
-      // Always have game state
-      const gameState = room.gameState;
-      
-      // Determine which player is which
-      const isPlayer1 = room.players[0] === socket.id;
-      const playerState = isPlayer1 ? gameState.player1 : gameState.player2;
-      
-      // Update position based on input
-      const speed = 0.01;
-      if (input.left) playerState.x -= speed;
-      if (input.right) playerState.x += speed;
-      if (input.up) playerState.y -= speed;
-      if (input.down) playerState.y += speed;
-      
-      // Keep players in bounds (0-1 range)
-      playerState.x = Math.max(0.01, Math.min(0.99, playerState.x));
-      playerState.y = Math.max(0.01, Math.min(0.99, playerState.y));
-      
-      // Handle actions
-      if (input.action) {
-          // Create projectile
-          const projectile = {
-              x: playerState.x + (isPlayer1 ? playerState.width : -playerState.width),
-              y: playerState.y,
-              width: 0.0125,
-              height: 0.0125,
-              speed: isPlayer1 ? 0.02 : -0.02,
-              color: isPlayer1 ? '#00f' : '#f0f'
-          };
-          gameState.projectiles.push(projectile);
-      }
-      
-      if (input.shield) {
-          // Activate shield
-          playerState.shieldActive = true;
-      } else {
-          playerState.shieldActive = false;
-      }
-      
-      // Update projectiles
-      gameState.projectiles.forEach(projectile => {
-          projectile.x += projectile.speed;
-      });
-      
-      // Filter out projectiles that are out of bounds
-      gameState.projectiles = gameState.projectiles.filter(
-          projectile => projectile.x > 0 && projectile.x < 1
-      );
-      
-      // Broadcast updated state
-      io.to(room.id).emit('gameState', gameState);
+    const player = players[socket.id];
+    if (!player || !player.room || !rooms[player.room]) return;
+    
+    const room = rooms[player.room];
+    room.lastInput = room.lastInput || {};
+    room.lastInput[socket.id] = input;
   });
 
   // Add a new event handler for restarting
@@ -212,6 +173,106 @@ io.on('connection', (socket) => {
     delete players[socket.id];
     io.emit('playerList', Object.values(players));
   });
+
+  function checkCollisions(room) {
+    const gameState = room.gameState;
+    if (!gameState) return;
+    
+    // Check projectile collisions
+    for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
+      const p = gameState.projectiles[i];
+      const isPlayer1Projectile = p.speed > 0;
+      
+      // Player 2 hit
+      if (isPlayer1Projectile && checkCollision(p, gameState.player2)) {
+        if (!gameState.player2.shieldActive) {
+          // Damage player 2
+          io.to(room.players[1]).emit('playerHit');
+        }
+        gameState.projectiles.splice(i, 1);
+      }
+      // Player 1 hit
+      else if (!isPlayer1Projectile && checkCollision(p, gameState.player1)) {
+        if (!gameState.player1.shieldActive) {
+          // Damage player 1
+          io.to(room.players[0]).emit('playerHit');
+        }
+        gameState.projectiles.splice(i, 1);
+      }
+    }
+  }
+
+  function checkCollision(projectile, player) {
+    return projectile.x < player.x + player.width &&
+          projectile.x + projectile.width > player.x &&
+          projectile.y < player.y + player.height &&
+          projectile.y + projectile.height > player.y;
+  }
+
+  setInterval(() => {
+    for (const roomId in rooms) {
+      const room = rooms[roomId];
+      if (!room.gameState) continue;
+      
+      const gameState = room.gameState;
+      
+      // Apply player inputs
+      if (room.lastInput) {
+        for (const playerId in room.lastInput) {
+          const input = room.lastInput[playerId];
+          const isPlayer1 = room.players[0] === playerId;
+          const playerState = isPlayer1 ? gameState.player1 : gameState.player2;
+          
+          // Update position based on input
+          const speed = 0.01;
+          if (input.left) playerState.x -= speed;
+          if (input.right) playerState.x += speed;
+          if (input.up) playerState.y -= speed;
+          if (input.down) playerState.y += speed;
+          
+          // Keep players in bounds
+          playerState.x = Math.max(0.01, Math.min(0.99 - playerState.width, playerState.x));
+          playerState.y = Math.max(0.01, Math.min(0.99 - playerState.height, playerState.y));
+          
+          // Handle actions
+          if (input.action) {
+            // Create projectile
+            const projectile = {
+              x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
+              y: playerState.y + playerState.height/2 - 0.00625,
+              width: 0.0125,
+              height: 0.0125,
+              speed: isPlayer1 ? 0.02 : -0.02,
+              color: isPlayer1 ? '#00f' : '#f0f'
+            };
+            gameState.projectiles.push(projectile);
+          }
+
+          if (input.shield) {
+            playerState.shieldActive = true;
+          } else {
+            playerState.shieldActive = false;
+          }
+        }
+      }
+      
+      // Update projectiles
+      gameState.projectiles.forEach(projectile => {
+        projectile.x += projectile.speed;
+      });
+      
+      // Filter out projectiles that are out of bounds
+      gameState.projectiles = gameState.projectiles.filter(
+        projectile => projectile.x > -0.1 && projectile.x < 1.1
+      );
+      
+      // Check collisions
+      checkCollisions(room);
+      
+      // Broadcast updated state
+      io.to(room.id).emit('gameState', gameState);
+    }
+  }, FRAME_TIME);
 });
 
 // Start server
