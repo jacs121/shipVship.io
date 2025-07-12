@@ -70,10 +70,9 @@ io.on('connection', (socket) => {
     if (!player) return;
     
     // Broadcast to all players
-    console.log(message)
     io.emit('chatMessage', {
       sender: player.name,
-      text: message
+      text: message.message
     });
   });
   
