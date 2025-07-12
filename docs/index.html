@@ -859,8 +859,7 @@
             const message = chatInput.value.trim();
             if (message) {
                 socket.emit('chatMessage', {
-                text: message,
-                sender: playerName
+                message
                 });
                 chatInput.value = '';
             }
