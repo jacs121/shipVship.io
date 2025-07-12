@@ -641,12 +641,10 @@
         
         <div class="mobile-controls" id="mobileControls" style="display: none;">
             <div class="d-pad">
-                <button class="mobile-btn up" id="upBtn"><i class="fas fa-arrow-up"></i></button>
                 <div class="d-pad-row">
                     <button class="mobile-btn left" id="leftBtn"><i class="fas fa-arrow-left"></i></button>
                     <button class="mobile-btn right" id="rightBtn"><i class="fas fa-arrow-right"></i></button>
                 </div>
-                <button class="mobile-btn down" id="downBtn"><i class="fas fa-arrow-down"></i></button>
             </div>
             <div class="action-buttons">
                 <button class="mobile-btn action" id="actionBtn"><i class="fas fa-fire"></i></button>
@@ -941,10 +939,6 @@
             }
             
             // Add event listeners
-            upBtn.addEventListener('touchstart', handleTouchStart(upBtn, 'up'));
-            upBtn.addEventListener('touchend', handleTouchEnd(upBtn, 'up'));
-            downBtn.addEventListener('touchstart', handleTouchStart(downBtn, 'down'));
-            downBtn.addEventListener('touchend', handleTouchEnd(downBtn, 'down'));
             leftBtn.addEventListener('touchstart', handleTouchStart(leftBtn, 'left'));
             leftBtn.addEventListener('touchend', handleTouchEnd(leftBtn, 'left'));
             rightBtn.addEventListener('touchstart', handleTouchStart(rightBtn, 'right'));
@@ -955,10 +949,6 @@
             shieldBtn.addEventListener('touchend', handleTouchEnd(shieldBtn, 'shield'));
             
             // Add mouse events for desktop testing
-            upBtn.addEventListener('mousedown', handleTouchStart(upBtn, 'up'));
-            upBtn.addEventListener('mouseup', handleTouchEnd(upBtn, 'up'));
-            downBtn.addEventListener('mousedown', handleTouchStart(downBtn, 'down'));
-            downBtn.addEventListener('mouseup', handleTouchEnd(downBtn, 'down'));
             leftBtn.addEventListener('mousedown', handleTouchStart(leftBtn, 'left'));
             leftBtn.addEventListener('mouseup', handleTouchEnd(leftBtn, 'left'));
             rightBtn.addEventListener('mousedown', handleTouchStart(rightBtn, 'right'));
@@ -1136,10 +1126,8 @@
 
             function sendPlayerInput() {
                 const input = {
-                    up: keys['ArrowUp'] || keys['w'] || touchInput.up || false,
-                    down: keys['ArrowDown'] || keys['s'] || touchInput.down || false,
-                    left: keys['ArrowLeft'] || keys['a'] || touchInput.left || false,
                     right: keys['ArrowRight'] || keys['d'] || touchInput.right || false,
+                    left: keys['ArrowLeft'] || keys['a'] || touchInput.left || false,
                     action: keys[' '] || keys['z'] || touchInput.action || false,
                     shield: keys['Shift'] || keys['x'] || touchInput.shield || false
                 };
@@ -1162,8 +1150,6 @@
 
                 if (keys['ArrowLeft'] || keys['a']) localPlayerState.x -= speed;
                 if (keys['ArrowRight'] || keys['d']) localPlayerState.x += speed;
-                if (keys['ArrowUp'] || keys['w']) localPlayerState.y -= speed;
-                if (keys['ArrowDown'] || keys['s']) localPlayerState.y += speed;
 
                 // clamp position
                 localPlayerState.x = Math.max(0.01, Math.min(0.99 - localPlayerState.width, localPlayerState.x));

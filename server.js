@@ -164,8 +164,6 @@ io.on('connection', (socket) => {
 
           if (input.left) playerState.x = Math.max(0.01, playerState.x - speed);
           if (input.right) playerState.x = Math.min(0.99 - playerState.width, playerState.x + speed);
-          if (input.up) playerState.y = Math.max(0.01, playerState.y - speed);
-          if (input.down) playerState.y = Math.min(0.99 - playerState.height, playerState.y + speed);
           
           // ACTION key
           if (input.action) {
@@ -192,7 +190,7 @@ io.on('connection', (socket) => {
       
       // Filter out-of-bound projectiles
       room.gameState.projectiles = room.gameState.projectiles.filter(
-        p => p.x > -0.1 && p.x < 1.1
+        p => p.y > -0.1 && p.y < 1.1
       );
 
       checkCollisions(room);
