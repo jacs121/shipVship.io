@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
   socket.on('connect_error', () => {
     setTimeout(reconnect, 2000);
   });
-  
+
   // Add player to global list
   players[socket.id] = {
     id: socket.id,
@@ -63,6 +63,17 @@ io.on('connection', (socket) => {
   socket.on('register', (name) => {
     players[socket.id].name = name;
     io.emit('playerList', Object.values(players));
+  });
+
+  socket.on('chatMessage', (message) => {
+    const player = players[socket.id];
+    if (!player) return;
+    
+    // Broadcast to all players
+    io.emit('chatMessage', {
+      sender: player.name,
+      text: message
+    });
   });
   
   // Start game
