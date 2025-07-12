@@ -461,10 +461,12 @@
             cursor: pointer;
         }
 
+
         @media (max-width: 768px) {
             .game-container {
-                height: 50vh !important;
-                max-height: 400px;
+                height: 60vh;
+                min-height: 250px;
+                max-height: 80vh;
             }
             
             .player-stats {
@@ -1100,8 +1102,9 @@
             // Setup controls
             if (isMobileDevice()) {
                 mobileControls.style.display = 'grid';
-                setupMobileControls();
             }
+
+            setupMobileControls();
 
             // Add keyboard event listeners
             const keys = {};
@@ -1162,6 +1165,9 @@
             const p1 = currentGameState.player1;
             ctx.fillStyle = p1.color;
             ctx.fillRect(p1.x * width, p1.y * height, p1.width * width, p1.height * height);
+            if (canvas.width === 0 || canvas.height === 0) {
+                resizeCanvas();
+            }
 
             // draw shield
             if (p1.shieldActive) {
