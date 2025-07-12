@@ -148,6 +148,13 @@ io.on('connection', (socket) => {
       const room = rooms[roomId];
       if (!room.gameState) continue;
       
+      if (room.gameState.player1.cooldown > 0) {
+        room.gameState.player1.cooldown -= 1
+      }
+      if (room.gameState.player2.cooldown > 0) {
+        room.gameState.player2.cooldown -= 1
+      }
+      
       // Process inputs
       if (room.inputs) {
         for (const playerId in room.inputs) {
