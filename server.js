@@ -93,11 +93,11 @@ io.on('connection', (socket) => {
         const initialGameState = {
             player1: { 
                 x: 0.125, y: 0.5, width: 0.0625, height: 0.125, 
-                color: '#00f', shieldActive: false 
+                color: '#00f', shieldActive: false, health: 100
             },
             player2: { 
                 x: 0.75, y: 0.5, width: 0.0625, height: 0.125, 
-                color: '#f0f', shieldActive: false 
+                color: '#f0f', shieldActive: false, health: 100
             },
             projectiles: []
         };
@@ -180,6 +180,8 @@ io.on('connection', (socket) => {
       room.gameState.projectiles = room.gameState.projectiles.filter(
         p => p.x > -0.1 && p.x < 1.1
       );
+
+      checkCollisions(room);
       
       // Send updated state to clients
       io.to(roomId).emit('gameState', room.gameState);
@@ -245,27 +247,29 @@ io.on('connection', (socket) => {
   function checkCollisions(room) {
     const gameState = room.gameState;
     if (!gameState) return;
-    
-    // Check projectile collisions
+
     for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
       const p = gameState.projectiles[i];
       const isPlayer1Projectile = p.speed > 0;
-      
-      // Player 2 hit
+
       if (isPlayer1Projectile && checkCollision(p, gameState.player2)) {
-        if (!gameState.player2.shieldActive) {
-          // Damage player 2
-          io.to(room.players[1]).emit('playerHit');
-        }
-        gameState.projectiles.splice(i, 1);
-      }
-      // Player 1 hit
-      else if (!isPlayer1Projectile && checkCollision(p, gameState.player1)) {
-        if (!gameState.player1.shieldActive) {
-          // Damage player 1
-          io.to(room.players[0]).emit('playerHit');
-        }
-        gameState.projectiles.splice(i, 1);
+          if (!gameState.player2.shieldActive) {
+              gameState.player2.health -= 10;
+              io.to(room.players[1]).emit('playerHit');
+              if (gameState.player2.health <= 0) {
+                  io.to(room.id).emit('gameOver', players[room.players[0]].name);
+              }
+          }
+          gameState.projectiles.splice(i, 1);
+      } else if (!isPlayer1Projectile && checkCollision(p, gameState.player1)) {
+          if (!gameState.player1.shieldActive) {
+              gameState.player1.health -= 10;
+              io.to(room.players[0]).emit('playerHit');
+              if (gameState.player1.health <= 0) {
+                  io.to(room.id).emit('gameOver', players[room.players[1]].name);
+              }
+          }
+          gameState.projectiles.splice(i, 1);
       }
     }
   }

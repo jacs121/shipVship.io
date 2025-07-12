@@ -855,7 +855,11 @@
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         });
-        
+
+        socket.on('gameOver', (winnerName) => {
+            endGame(winnerName);
+        });
+
         function sendChatMessage() {
             const message = chatInput.value.trim();
             if (message) {
@@ -1121,7 +1125,9 @@
                 action: keys[' '] || keys['z'] || touchInput.action || false,
                 shield: keys['Shift'] || keys['x'] || touchInput.shield || false
                 };
-                socket.emit('playerInput', input);
+                if (gameActive) {
+                    socket.emit('playerInput', input);
+                }
             }
 
             // Start game loop
@@ -1154,7 +1160,13 @@
             const p1 = currentGameState.player1;
             ctx.fillStyle = p1.color;
             ctx.fillRect(p1.x, p1.y, p1.width, p1.height);
-            
+
+            document.getElementById('player1HealthText').textContent = currentGameState.player1.health;
+            document.getElementById('player1Health').style.width = currentGameState.player1.health + '%';
+
+            document.getElementById('player2HealthText').textContent = currentGameState.player2.health;
+            document.getElementById('player2Health').style.width = currentGameState.player2.health + '%';
+                        
             if (p1.shieldActive) {
                 ctx.strokeStyle = '#00ffff';
                 ctx.lineWidth = 3;
@@ -1216,6 +1228,7 @@
         // Initialize the client
         window.onload = function() {
             createStars();
+            resizeCanvas();
         };
     </script>
 </body>
