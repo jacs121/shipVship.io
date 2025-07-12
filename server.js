@@ -103,19 +103,19 @@ io.on('connection', (socket) => {
         
         // Start game for both players with initial state
         io.to(socket.id).emit('gameStart', {
-            roomId,
-            opponent: players[waitingPlayer.id],
-            player: players[socket.id],
-            isPlayer1: true,
-            gameState: initialGameState
+          roomId,
+          opponent: players[waitingPlayer.id],
+          player: players[socket.id],
+          isPlayer1: true,
+          gameState: rooms[roomId].gameState  // Send the actual game state object
         });
-        
+
         io.to(waitingPlayer.id).emit('gameStart', {
-            roomId,
-            opponent: players[socket.id],
-            player: players[waitingPlayer.id],
-            isPlayer1: false,
-            gameState: initialGameState
+          roomId,
+          opponent: players[socket.id],
+          player: players[waitingPlayer.id],
+          isPlayer1: false,
+          gameState: rooms[roomId].gameState  // Send the actual game state object
         });
     } else {
         // Set player as ready
@@ -125,14 +125,70 @@ io.on('connection', (socket) => {
     }
   });
 
+  const gameLoopInterval = setInterval(() => {
+    for (const roomId in rooms) {
+      const room = rooms[roomId];
+      if (!room.gameState) continue;
+      
+      // Process inputs
+      if (room.inputs) {
+        for (const playerId in room.inputs) {
+          const input = room.inputs[playerId];
+          const isPlayer1 = room.players[0] === playerId;
+          const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
+          
+          // Update position
+          const speed = 0.01;
+          if (input.left) playerState.x = Math.max(0.01, playerState.x - speed);
+          if (input.right) playerState.x = Math.min(0.99 - playerState.width, playerState.x + speed);
+          if (input.up) playerState.y = Math.max(0.01, playerState.y - speed);
+          if (input.down) playerState.y = Math.min(0.99 - playerState.height, playerState.y + speed);
+          
+          // Handle actions
+          if (input.action) {
+            room.gameState.projectiles.push({
+              x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
+              y: playerState.y + playerState.height/2 - 0.00625,
+              width: 0.0125,
+              height: 0.0125,
+              speed: isPlayer1 ? 0.02 : -0.02,
+              color: isPlayer1 ? '#00f' : '#f0f'
+            });
+          }
+          
+          playerState.shieldActive = input.shield;
+        }
+        // Clear inputs after processing
+        room.inputs = {};
+      }
+      
+      // Update projectiles
+      room.gameState.projectiles.forEach(p => p.x += p.speed);
+      
+      // Filter out-of-bound projectiles
+      room.gameState.projectiles = room.gameState.projectiles.filter(
+        p => p.x > -0.1 && p.x < 1.1
+      );
+      
+      // Send updated state to clients
+      io.to(roomId).emit('gameState', room.gameState);
+    }
+  }, 1000/60); // 60 FPS
+
+  process.on('SIGTERM', () => {
+    clearInterval(gameLoopInterval);
+  });
+
   // Game state updates
   socket.on('playerInput', (input) => {
     const player = players[socket.id];
     if (!player || !player.room || !rooms[player.room]) return;
     
-    const room = rooms[player.room];
-    room.lastInput = room.lastInput || {};
-    room.lastInput[socket.id] = input;
+    // Store input for processing in game loop
+    if (!rooms[player.room].inputs) {
+      rooms[player.room].inputs = {};
+    }
+    rooms[player.room].inputs[socket.id] = input;
   });
 
   // Add a new event handler for restarting
@@ -208,71 +264,6 @@ io.on('connection', (socket) => {
           projectile.y < player.y + player.height &&
           projectile.y + projectile.height > player.y;
   }
-
-  setInterval(() => {
-    for (const roomId in rooms) {
-      const room = rooms[roomId];
-      if (!room.gameState) continue;
-      
-      const gameState = room.gameState;
-      
-      // Apply player inputs
-      if (room.lastInput) {
-        for (const playerId in room.lastInput) {
-          const input = room.lastInput[playerId];
-          const isPlayer1 = room.players[0] === playerId;
-          const playerState = isPlayer1 ? gameState.player1 : gameState.player2;
-          
-          // Update position based on input
-          const speed = 0.01;
-          if (input.left) playerState.x -= speed;
-          if (input.right) playerState.x += speed;
-          if (input.up) playerState.y -= speed;
-          if (input.down) playerState.y += speed;
-          
-          // Keep players in bounds
-          playerState.x = Math.max(0.01, Math.min(0.99 - playerState.width, playerState.x));
-          playerState.y = Math.max(0.01, Math.min(0.99 - playerState.height, playerState.y));
-          
-          // Handle actions
-          if (input.action) {
-            // Create projectile
-            const projectile = {
-              x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
-              y: playerState.y + playerState.height/2 - 0.00625,
-              width: 0.0125,
-              height: 0.0125,
-              speed: isPlayer1 ? 0.02 : -0.02,
-              color: isPlayer1 ? '#00f' : '#f0f'
-            };
-            gameState.projectiles.push(projectile);
-          }
-
-          if (input.shield) {
-            playerState.shieldActive = true;
-          } else {
-            playerState.shieldActive = false;
-          }
-        }
-      }
-      
-      // Update projectiles
-      gameState.projectiles.forEach(projectile => {
-        projectile.x += projectile.speed;
-      });
-      
-      // Filter out projectiles that are out of bounds
-      gameState.projectiles = gameState.projectiles.filter(
-        projectile => projectile.x > -0.1 && projectile.x < 1.1
-      );
-      
-      // Check collisions
-      checkCollisions(room);
-      
-      // Broadcast updated state
-      io.to(room.id).emit('gameState', gameState);
-    }
-  }, FRAME_TIME);
 });
 
 // Start server
