@@ -1124,21 +1124,24 @@
             window.addEventListener('keydown', (e) => {
                 keys[e.key] = true;
                 sendPlayerInput();
+                if (e.key === " " || e.key === "shift"){
+                    keys[e.key] = false;
+                }
             });
-            
+
             window.addEventListener('keyup', (e) => {
                 keys[e.key] = false;
                 sendPlayerInput();
             });
-            
+
             function sendPlayerInput() {
                 const input = {
-                up: keys['ArrowUp'] || keys['w'] || touchInput.up || false,
-                down: keys['ArrowDown'] || keys['s'] || touchInput.down || false,
-                left: keys['ArrowLeft'] || keys['a'] || touchInput.left || false,
-                right: keys['ArrowRight'] || keys['d'] || touchInput.right || false,
-                action: keys[' '] || keys['z'] || touchInput.action || false,
-                shield: keys['Shift'] || keys['x'] || touchInput.shield || false
+                    up: keys['ArrowUp'] || keys['w'] || touchInput.up || false,
+                    down: keys['ArrowDown'] || keys['s'] || touchInput.down || false,
+                    left: keys['ArrowLeft'] || keys['a'] || touchInput.left || false,
+                    right: keys['ArrowRight'] || keys['d'] || touchInput.right || false,
+                    action: keys[' '] || keys['z'] || touchInput.action || false,
+                    shield: keys['Shift'] || keys['x'] || touchInput.shield || false
                 };
                 if (gameActive) {
                     socket.emit('playerInput', input);

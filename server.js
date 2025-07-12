@@ -178,7 +178,7 @@ io.on('connection', (socket) => {
                   speed: isPlayer1 ? 0.02 : -0.02,
                   color: isPlayer1 ? '#00f' : '#f0f'
                 });
-                playerState.cooldown = 20; // e.g. 20 frames = ⅓ second
+                playerState.cooldown = FPS; // e.g. {FPS} frames = ⅓ second
             }
           }
 
@@ -200,7 +200,7 @@ io.on('connection', (socket) => {
       // Send updated state to clients
       io.to(roomId).emit('gameState', room.gameState);
     }
-  }, 1000/60); // 60 FPS
+  }, FRAME_TIME); // 60 FPS
 
   process.on('SIGTERM', () => {
     clearInterval(gameLoopInterval);
