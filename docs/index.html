@@ -31,6 +31,7 @@
             -moz-user-select: none;
             -ms-user-select: none;
             user-select: none;
+            overflow-y: auto;
 
         }
 
@@ -500,25 +501,6 @@
             }
         }
 
-        @media (max-width: 480px) {
-            .game-container {
-                height: 40vh !important;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .player h2 {
-                font-size: 1.2rem;
-            }
-            
-            .powerup {
-                width: 30px;
-                height: 30px;
-                font-size: 1rem;
-            }
-        }
         /* Mobile landscape */
         @media (max-height: 500px) and (orientation: landscape) {
             .game-container {
@@ -537,6 +519,28 @@
             
             .chat-container {
                 display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                height: 45vh !important;
+                max-height: 50vh;
+                min-height: 200px;
+            }
+
+            .player-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .player {
+                padding: 8px;
+                font-size: 0.9rem;
+            }
+
+            .chat-container {
+                display: none; /* Optional: hide chat on tiny screens */
             }
         }
 

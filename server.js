@@ -105,7 +105,8 @@ io.on('connection', (socket) => {
         rooms[roomId] = {
             id: roomId,
             players: [socket.id, waitingPlayer.id],
-            gameState: initialGameState
+            gameState: initialGameState,
+            inputs: {}
         };
         
         // Add players to room
@@ -148,28 +149,29 @@ io.on('connection', (socket) => {
           const isPlayer1 = room.players[0] === playerId;
           const playerState = isPlayer1 ? room.gameState.player1 : room.gameState.player2;
           
-          // Update position
           const speed = 0.01;
           if (input.left) playerState.x = Math.max(0.01, playerState.x - speed);
           if (input.right) playerState.x = Math.min(0.99 - playerState.width, playerState.x + speed);
           if (input.up) playerState.y = Math.max(0.01, playerState.y - speed);
           if (input.down) playerState.y = Math.min(0.99 - playerState.height, playerState.y + speed);
           
-          // Handle actions
+          // ACTION key
           if (input.action) {
             room.gameState.projectiles.push({
               x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
-              y: playerState.y + playerState.height/2 - 0.00625,
+              y: playerState.y + playerState.height / 2 - 0.00625,
               width: 0.0125,
               height: 0.0125,
               speed: isPlayer1 ? 0.02 : -0.02,
               color: isPlayer1 ? '#00f' : '#f0f'
             });
           }
-          
+
+          // SHIELD key
           playerState.shieldActive = input.shield;
         }
-        // Clear inputs after processing
+
+        // Clear inputs
         room.inputs = {};
       }
       
@@ -195,8 +197,8 @@ io.on('connection', (socket) => {
   // Game state updates
   socket.on('playerInput', (input) => {
     const player = players[socket.id];
-    console.log("player", player.name, "inputted", input)
     if (!player || !player.room || !rooms[player.room]) return;
+    console.log("player", player.name, "inputted", input)
     
     // Store input for processing in game loop
     if (!rooms[player.room].inputs) {
