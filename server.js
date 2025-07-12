@@ -183,7 +183,6 @@ io.on('connection', (socket) => {
       checkCollisions(room);
       
       // Send updated state to clients
-      console.log("Emitting gameState for room:", roomId);
       io.to(roomId).emit('gameState', room.gameState);
     }
   }, 1000/60); // 60 FPS
