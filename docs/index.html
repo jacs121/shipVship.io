@@ -850,6 +850,7 @@
         socket.on('chatMessage', (message) => {
             const messageElement = document.createElement('div');
             messageElement.className = 'chat-message';
+            console.log("message", message)
             messageElement.innerHTML = `<strong>${message.sender}:</strong> ${message.text}`;
             chatMessages.appendChild(messageElement);
             chatMessages.scrollTop = chatMessages.scrollHeight;
