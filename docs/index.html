@@ -972,16 +972,25 @@
         function resizeCanvas() {
             const canvas = document.getElementById('gameCanvas');
             if (!canvas) return;
+            
+            const parent = canvas.parentElement;
 
+            // Get display size (CSS pixels)
+            const displayWidth = parent.clientWidth;
+            const displayHeight = parent.clientHeight;
+
+            // Set canvas style (responsive display)
+            canvas.style.width = displayWidth + 'px';
+            canvas.style.height = displayHeight + 'px';
+
+            // Set actual drawing size (device pixels)
             const dpr = window.devicePixelRatio || 1;
-            const rect = canvas.getBoundingClientRect();
+            canvas.width = displayWidth * dpr;
+            canvas.height = displayHeight * dpr;
 
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-
+            // Scale drawing operations
             const ctx = canvas.getContext('2d');
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale drawing
-
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
             
             // Redraw if game is active
             if (gameActive && currentGameState) {
