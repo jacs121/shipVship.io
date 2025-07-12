@@ -1153,7 +1153,7 @@
         function gameLoop() {
             if (!gameActive) return;
 
-            if (playerState.cooldown > 0) {
+            if (localPlayerState.cooldown > 0) {
                 console.log(playerState.cooldown)
                 playerState.cooldown -= 1;
             }
