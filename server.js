@@ -112,7 +112,11 @@ io.on('connection', (socket) => {
         // Add players to room
         players[socket.id].room = roomId;
         players[waitingPlayer.id].room = roomId;
-        
+
+        // ✅ JOIN ROOM
+        socket.join(roomId);
+        io.sockets.sockets.get(waitingPlayer.id)?.join(roomId);
+
         // Start game for both players with initial state
         io.to(socket.id).emit('gameStart', {
           roomId,
