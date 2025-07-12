@@ -93,11 +93,13 @@ io.on('connection', (socket) => {
         const initialGameState = {
             player1: { 
                 x: 0.125, y: 0.5, width: 0.0625, height: 0.125, 
-                color: '#00f', shieldActive: false, health: 100
+                color: '#00f', shieldActive: false, health: 100,
+                cooldown: 0
             },
             player2: { 
                 x: 0.75, y: 0.5, width: 0.0625, height: 0.125, 
-                color: '#f0f', shieldActive: false, health: 100
+                color: '#f0f', shieldActive: false, health: 100,
+                cooldown: 0
             },
             projectiles: []
         };
@@ -160,14 +162,17 @@ io.on('connection', (socket) => {
           
           // ACTION key
           if (input.action) {
-            room.gameState.projectiles.push({
-              x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
-              y: playerState.y + playerState.height / 2 - 0.00625,
-              width: 0.0125,
-              height: 0.0125,
-              speed: isPlayer1 ? 0.02 : -0.02,
-              color: isPlayer1 ? '#00f' : '#f0f'
-            });
+            if (playerState.cooldown <= 0) {
+                room.gameState.projectiles.push({
+                  x: playerState.x + (isPlayer1 ? playerState.width : -0.01),
+                  y: playerState.y + playerState.height / 2 - 0.00625,
+                  width: 0.0125,
+                  height: 0.0125,
+                  speed: isPlayer1 ? 0.02 : -0.02,
+                  color: isPlayer1 ? '#00f' : '#f0f'
+                });
+                playerState.cooldown = 20; // e.g. 20 frames = ⅓ second
+            }
           }
 
           // SHIELD key

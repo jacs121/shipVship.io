@@ -972,21 +972,16 @@
         function resizeCanvas() {
             const canvas = document.getElementById('gameCanvas');
             if (!canvas) return;
-            
-            const container = canvas.parentElement;
+
             const dpr = window.devicePixelRatio || 1;
-            
-            // Set display size
-            canvas.style.width = `${container.clientWidth}px`;
-            canvas.style.height = `${container.clientHeight}px`;
-            
-            // Set actual size in memory
-            canvas.width = container.clientWidth * dpr;
-            canvas.height = container.clientHeight * dpr;
-            
-            // Scale context
+            const rect = canvas.getBoundingClientRect();
+
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+
             const ctx = canvas.getContext('2d');
-            ctx.scale(dpr, dpr);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // scale drawing
+
             
             // Redraw if game is active
             if (gameActive && currentGameState) {
@@ -1149,6 +1144,10 @@
         // Game loop function
         function gameLoop() {
             if (!gameActive) return;
+
+            if (playerState.cooldown > 0) {
+                playerState.cooldown -= 1;
+            }
             
             // Draw only when we have state
             if (localPlayerState) {
