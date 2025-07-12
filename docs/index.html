@@ -1076,6 +1076,7 @@
 
         socket.on('gameState', (gameState) => {
             if (gameActive) {
+                console.log("Received game state:", gameState);
                 currentGameState = gameState;
                 drawGame();
             }

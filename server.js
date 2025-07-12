@@ -170,9 +170,6 @@ io.on('connection', (socket) => {
           // SHIELD key
           playerState.shieldActive = input.shield;
         }
-
-        // Clear inputs
-        room.inputs = {};
       }
       
       // Update projectiles
@@ -198,8 +195,7 @@ io.on('connection', (socket) => {
   socket.on('playerInput', (input) => {
     const player = players[socket.id];
     if (!player || !player.room || !rooms[player.room]) return;
-    console.log("player", player.name, "inputted", input)
-    
+
     // Store input for processing in game loop
     if (!rooms[player.room].inputs) {
       rooms[player.room].inputs = {};
