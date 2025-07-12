@@ -1153,9 +1153,9 @@
         function gameLoop() {
             if (!gameActive) return;
 
-            if (currentGameState.player1.cooldown > 0) {
+            if (currentGameState && currentGameState.player1.cooldown > 0) {
                 console.log(currentGameState.player1.cooldown)
-                .player1.cooldown -= 1;
+                currentGameState.player1.cooldown -= 1;
             }
             
             // Draw only when we have state
